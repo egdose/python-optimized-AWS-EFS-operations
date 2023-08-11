@@ -122,7 +122,8 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         dirname = sys.argv[1]
     else:
-        dirname = '/'
+        # Get current directory
+        dirname = os.getcwd()
 
     manager = multiprocessing.Manager()
     return_data = manager.dict()
