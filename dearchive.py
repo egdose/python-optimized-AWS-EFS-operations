@@ -12,7 +12,7 @@ def debug_print(return_data, dirname):
 
 def dearchive_directory(dirname, return_data, lock):
     # Dearchive dirname
-    os.system(f'unzip -q -o {dirname}.zip -d {dirname}')
+    shutil.unpack_archive(dirname + '.zip', dirname, 'zip')
 
     with lock:
         return_data['dircount'] += 1
@@ -93,7 +93,7 @@ if __name__ == '__main__':
 
     start = time.time()
     # Extract the main zip
-    os.system(f'unzip -o {zipname} -d {zipname.replace(".zip", "")}')
+    shutil.unpack_archive(zipname, zipname.replace('.zip', ''), 'zip')
     dearchive_directory_mp(zipname.replace('.zip', ''), return_data, lock)
     end = time.time()
 
