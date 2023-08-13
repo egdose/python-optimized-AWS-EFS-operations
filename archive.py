@@ -7,8 +7,13 @@ import shutil
 # Limit the number of threads
 max_threads = 100
 
+def log(str):
+    with open('logs.txt', 'a') as f:
+        f.write(str + '\n')
+    print(str)
+
 def debug_print(return_data, dirname):
-    print(f'Dirs Archived: {return_data["dircount"]} ({dirname})')
+    log(f'Dirs Archived: {return_data["dircount"]} ({dirname})')
 
 def archive_directory(dirname, return_data, lock):
     # Archive dirname
@@ -30,7 +35,7 @@ def archive_directory_mp(dirname, return_data, lock):
     if len(dirs) > max_threads:
         # print(f'Total Chunks: {len(dirs)/max_threads}')
         threads_started = 0
-        print(f'Total Dirs: {len(dirs)}')
+        log(f'Total Dirs: {len(dirs)}')
         finished = 0
         for d in dirs:
             p = multiprocessing.Process(target=archive_directory, args=(d, return_data, lock,))
@@ -44,7 +49,7 @@ def archive_directory_mp(dirname, return_data, lock):
                     if not p.is_alive():
                         p.join()
                         finished += 1
-                        print(f'{finished}/{len(dirs)} threads finished...')
+                        log(f'{finished}/{len(dirs)} threads finished...')
                         threads.remove(p)
                 
                 time.sleep(0.1)
@@ -52,23 +57,23 @@ def archive_directory_mp(dirname, return_data, lock):
         for p in threads:
             p.join()
             finished += 1
-            print(f'{finished}/{len(dirs)} threads finished...')
+            log(f'{finished}/{len(dirs)} threads finished...')
     
-        print(f'Threads Started: {threads_started}')
+        log(f'Threads Started: {threads_started}')
     else:
         for d in dirs:
             p = multiprocessing.Process(target=archive_directory, args=(d, return_data, lock,))
             p.start()
             threads.append(p)
         
-        print(f'Waiting for {len(threads)} threads to finish...')
+        log(f'Waiting for {len(threads)} threads to finish...')
 
         finished = 0
 
         for p in threads:
             p.join()
             finished += 1
-            print(f'{finished}/{len(threads)} threads finished...')
+            log(f'{finished}/{len(threads)} threads finished...')
 
     # Get all the zip files in current directory
     zips = [os.path.join(dirname, f) for f in os.listdir(dirname) if os.path.isfile(os.path.join(dirname, f)) and f.endswith('.zip')]
@@ -81,18 +86,24 @@ def archive_directory_mp(dirname, return_data, lock):
     for z in zips:
         shutil.move(z, os.path.join(dirname, 'temp'))
     
+    log('Zips moved to temp directory...')
+
     # Zip temp directory
     shutil.make_archive(dirname, 'zip', os.path.join(dirname, 'temp'))
 
+    log('Temp directory zipped...')
+
     # Delete temp directory
     shutil.rmtree(os.path.join(dirname, 'temp'))
+
+    log('Temp directory deleted...')
 
 if __name__ == '__main__':
     # Get directory from args
     if len(sys.argv) > 1 and os.path.isdir(sys.argv[1]) and sys.argv[1] != "/":
         dirname = sys.argv[1]
     else:
-        print(f'Usage: {sys.argv[0]} <dirname>')
+        log(f'Usage: {sys.argv[0]} <dirname>')
 
         sys.exit(1)
 
@@ -109,5 +120,5 @@ if __name__ == '__main__':
     end = time.time()
 
     # Print number of directories deleted
-    print(f'Directories archived: {return_data["dircount"]}')
-    print('Time: ' + str(round(end - start, 2)) + 's')
+    log(f'Directories archived: {return_data["dircount"]}')
+    log('Time: ' + str(round(end - start, 2)) + 's')
