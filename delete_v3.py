@@ -31,14 +31,16 @@ def get_sizes_single(dirname, return_data, lock):
 
         counter += 1
 
-        if counter % 800 == 0:
+        if counter >= 800:
             with lock:
-                return_data['dircount'] += 1
+                return_data['dircount'] += counter
             
             debug_print(return_data)
 
+            counter = 0
+
     with lock:
-        return_data['dircount'] += 1
+        return_data['dircount'] += counter
 
 def get_sizes_filecount(dirname, return_data, lock):    
     # Get all the directories in the current directory
