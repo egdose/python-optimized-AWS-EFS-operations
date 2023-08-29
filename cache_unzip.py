@@ -7,8 +7,16 @@ import shutil
 # Limit the number of threads
 max_threads = 100
 
+FILE_LOGGING = 0
+
+def log(str):
+    if FILE_LOGGING:
+        with open('logs.txt', 'a') as f:
+            f.write(str + '\n')
+    print(str)
+
 def debug_print(return_data, dirname):
-    print(f'Dirs Extracted: {return_data["dircount"]} ({dirname})')
+    log(f'Dirs Extracted: {return_data["dircount"]} ({dirname})')
 
 def dearchive_directory(dirname, return_data, lock):
     # Dearchive dirname
@@ -28,9 +36,9 @@ def dearchive_directory_mp(dirname, return_data, lock):
 
     # Check if number of directories is greater than max_threads
     if len(dirs) > max_threads:
-        # print(f'Total Chunks: {len(dirs)/max_threads}')
+        # log(f'Total Chunks: {len(dirs)/max_threads}')
         threads_started = 0
-        print(f'Total Dirs: {len(dirs)}')
+        log(f'Total Dirs: {len(dirs)}')
         finished = 0
         for d in dirs:
             p = multiprocessing.Process(target=dearchive_directory, args=(d, return_data, lock,))
@@ -44,7 +52,7 @@ def dearchive_directory_mp(dirname, return_data, lock):
                     if not p.is_alive():
                         p.join()
                         finished += 1
-                        print(f'{finished}/{len(dirs)} threads finished...')
+                        log(f'{finished}/{len(dirs)} threads finished...')
                         threads.remove(p)
                 
                 time.sleep(0.1)
@@ -52,23 +60,23 @@ def dearchive_directory_mp(dirname, return_data, lock):
         for p in threads:
             p.join()
             finished += 1
-            print(f'{finished}/{len(dirs)} threads finished...')
+            log(f'{finished}/{len(dirs)} threads finished...')
     
-        print(f'Threads Started: {threads_started}')
+        log(f'Threads Started: {threads_started}')
     else:
         for d in dirs:
             p = multiprocessing.Process(target=dearchive_directory, args=(d, return_data, lock,))
             p.start()
             threads.append(p)
         
-        print(f'Waiting for {len(threads)} threads to finish...')
+        log(f'Waiting for {len(threads)} threads to finish...')
 
         finished = 0
 
         for p in threads:
             p.join()
             finished += 1
-            print(f'{finished}/{len(threads)} threads finished...')
+            log(f'{finished}/{len(threads)} threads finished...')
 
     # Delete all the zips in the directory
     for d in dirs:
@@ -79,7 +87,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 1 and os.path.isfile(sys.argv[1]) and sys.argv[1] != "/" and sys.argv[1].endswith(".zip"):
         zipname = sys.argv[1]
     else:
-        print(f'Usage: {sys.argv[0]} <zipname>')
+        log(f'Usage: {sys.argv[0]} <zipname>')
 
         sys.exit(1)
 
@@ -98,5 +106,5 @@ if __name__ == '__main__':
     end = time.time()
 
     # Print number of directories deleted
-    print(f'Directories archived: {return_data["dircount"]}')
-    print('Time: ' + str(round(end - start, 2)) + 's')
+    log(f'Directories archived: {return_data["dircount"]}')
+    log('Time: ' + str(round(end - start, 2)) + 's')

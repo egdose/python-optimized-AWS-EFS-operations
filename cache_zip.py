@@ -7,9 +7,12 @@ import shutil
 # Limit the number of threads
 max_threads = 100
 
+FILE_LOGGING = 0
+
 def log(str):
-    with open('logs.txt', 'a') as f:
-        f.write(str + '\n')
+    if FILE_LOGGING:
+        with open('logs.txt', 'a') as f:
+            f.write(str + '\n')
     print(str)
 
 def debug_print(return_data, dirname):
@@ -33,7 +36,7 @@ def archive_directory_mp(dirname, return_data, lock):
 
     # Check if number of directories is greater than max_threads
     if len(dirs) > max_threads:
-        # print(f'Total Chunks: {len(dirs)/max_threads}')
+        # log(f'Total Chunks: {len(dirs)/max_threads}')
         threads_started = 0
         log(f'Total Dirs: {len(dirs)}')
         finished = 0
