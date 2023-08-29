@@ -10,7 +10,7 @@ max_threads = 100
 def debug_print(return_data):
     print(f'Dirs Deleted: {return_data["dircount"]}')
 
-def get_sizes_single(dirname, return_data, lock):
+def single_thread(dirname, return_data, lock):
     data = {
         'dircount': 0
     }
@@ -37,7 +37,7 @@ def get_sizes_single(dirname, return_data, lock):
     with lock:
         return_data['dircount'] += 1
 
-def get_sizes_filecount(dirname, return_data, lock):    
+def multi_threads(dirname, return_data, lock):    
     # Get all the directories in the current directory
     dirs = [os.path.join(dirname, d) for d in os.listdir(dirname) if os.path.isdir(os.path.join(dirname, d))]
 
@@ -58,7 +58,7 @@ def get_sizes_filecount(dirname, return_data, lock):
         print(f'Total Dirs: {len(dirs)}')
         finished = 0
         for d in dirs:
-            p = multiprocessing.Process(target=get_sizes_single, args=(d, return_data, lock,))
+            p = multiprocessing.Process(target=single_thread, args=(d, return_data, lock,))
             p.start()
             threads_started += 1
             threads.append(p)
@@ -82,7 +82,7 @@ def get_sizes_filecount(dirname, return_data, lock):
         print(f'Threads Started: {threads_started}')
     else:
         for d in dirs:
-            p = multiprocessing.Process(target=get_sizes_single, args=(d, return_data, lock,))
+            p = multiprocessing.Process(target=single_thread, args=(d, return_data, lock,))
             p.start()
             threads.append(p)
         
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     lock = multiprocessing.Lock()
 
     start = time.time()
-    get_sizes_filecount(dirname, return_data, lock)
+    multi_threads(dirname, return_data, lock)
     end = time.time()
 
     # Delete the directory
