@@ -2,16 +2,20 @@ import os
 import time
 import multiprocessing
 import sys
+from datetime import datetime
 # import shutil
 
 # Suppress warning
 import warnings
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore")
 
 import pandas as pd
 
 # Limit the number of threads
 max_threads = 100
+
+# Date format
+date_format = '%Y-%m-%d %H:%M:%S'
 
 def debug_print(return_data):
     print(f'{round(return_data["size"] / 1024 / 1024 / 1024, 3)} GB -> {return_data["filecount"]} files')
@@ -61,9 +65,9 @@ def single_thread(dirname, return_data, lock):
     # Create output row
     output_row = {
         'directory': dirname,
-        'size': data['size'],
+        'size': round(data["size"] / 1024 / 1024, 3), # MB
         'filecount': data['filecount'],
-        'date_modified': date_modified
+        'date_modified': datetime.fromtimestamp(date_modified).strftime(date_format) # Convert to date
     }
 
     with lock:
@@ -72,6 +76,9 @@ def single_thread(dirname, return_data, lock):
 
         # Append row to dataframe
         return_data['df'] = return_data['df'].append(output_row, ignore_index=True)
+
+        # Write dataframe
+        return_data['df'].to_csv('temp.csv', index=False)
 
     # print(return_data['filecount'])
 
