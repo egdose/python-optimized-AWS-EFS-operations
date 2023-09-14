@@ -20,7 +20,7 @@ date_format = '%Y-%m-%d %H:%M:%S'
 def debug_print(return_data):
     print(f'{round(return_data["size"] / 1024 / 1024 / 1024, 3)} GB -> {return_data["filecount"]} files')
 
-def single_thread(dirname, return_data, lock):
+def single_thread(dirname, return_data, lock, parent_dirname):
     data = {
         'size': 0,
         'filecount': 0
@@ -64,7 +64,8 @@ def single_thread(dirname, return_data, lock):
     
     # Create output row
     output_row = {
-        'directory': dirname,
+        'parent_directory': parent_dirname,
+        'directory': dirname.split(parent_dirname)[1],
         'size': round(data["size"] / 1024 / 1024, 3), # MB
         'filecount': data['filecount'],
         'date_modified': datetime.fromtimestamp(date_modified).strftime(date_format) # Convert to date
@@ -102,6 +103,25 @@ def multi_threads(dirname, return_data, lock):
             data['filecount'] += 1
         except:
             print(f'Error with file: {f}')
+
+    # Get date modified of this directory
+    date_modified = os.path.getmtime(dirname)
+
+    # Create output row
+    output_row = {
+        'parent_directory': dirname,
+        'directory': '.',
+        'size': round(data["size"] / 1024 / 1024, 3), # MB
+        'filecount': data['filecount'],
+        'date_modified': datetime.fromtimestamp(date_modified).strftime(date_format) # Convert to date
+    }
+
+    with lock:
+        # Append row to dataframe
+        return_data['df'] = return_data['df'].append(output_row, ignore_index=True)
+
+        # Write dataframe
+        return_data['df'].to_csv('temp.csv', index=False)
     
     # Create a thread for each directory and wait for them to finish
     threads = []
@@ -112,7 +132,7 @@ def multi_threads(dirname, return_data, lock):
     finished = 0
 
     for d in dirs:
-        p = multiprocessing.Process(target=single_thread, args=(d, return_data, lock,))
+        p = multiprocessing.Process(target=single_thread, args=(d, return_data, lock, dirname,))
         p.start()
         threads_started += 1
         threads.append(p)
@@ -153,7 +173,7 @@ if __name__ == '__main__':
     return_data['size'] = 0
     return_data['filecount'] = 0
 
-    output_columns = ['directory', 'size', 'filecount', 'date_modified']
+    output_columns = ['parent_directory', 'directory', 'size', 'filecount', 'date_modified']
 
     # Creating a dataframe
     df = pd.DataFrame(columns = output_columns)
@@ -161,9 +181,25 @@ if __name__ == '__main__':
 
     # Create a lock
     lock = multiprocessing.Lock()
+    
+    # Get all the directories in the current directory
+    dirs = [os.path.join(dirname, d) for d in os.listdir(dirname) if os.path.isdir(os.path.join(dirname, d))]
+
+    # Get all the files in the current directory
+    files = [os.path.join(dirname, f) for f in os.listdir(dirname) if os.path.isfile(os.path.join(dirname, f))]
 
     start = time.time()
-    multi_threads(dirname, return_data, lock)
+    # Get the size of all the files in the current directory
+    for f in files:
+        try:
+            return_data['size'] += os.path.getsize(f)
+            return_data['filecount'] += 1
+        except:
+            print(f'Error with file: {f}')
+
+    for d in dirs:
+        multi_threads(d, return_data, lock)
+
     end = time.time()
 
     # Print size in GB
