@@ -84,7 +84,7 @@ def single_thread(dirname, return_data, lock, parent_dirname):
         return_data['df'] = pd.concat([return_data['df'], pd.DataFrame([output_row])], ignore_index=True)
 
         # Write dataframe
-        return_data['df'].to_csv('temp.csv', index=False)
+        return_data['df'].to_csv('temp_no_cache.csv', index=False)
 
     # print(return_data['filecount'])
 
@@ -126,7 +126,7 @@ def multi_threads(dirname, return_data, lock):
         return_data['df'] = pd.concat([return_data['df'], pd.DataFrame([output_row])], ignore_index=True)
 
         # Write dataframe
-        return_data['df'].to_csv('temp.csv', index=False)
+        return_data['df'].to_csv('temp_no_cache.csv', index=False)
     
     # Create a thread for each directory and wait for them to finish
     threads = []
@@ -215,4 +215,4 @@ if __name__ == '__main__':
     print('Time: ' + str(round(end - start, 2)) + 's')
 
     # Write dataframe to csv
-    return_data['df'].to_csv('output.csv', index=False)
+    return_data['df'].to_csv('output_no_cache.csv', index=False)
