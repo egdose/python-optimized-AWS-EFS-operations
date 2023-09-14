@@ -31,6 +31,11 @@ def single_thread(dirname, return_data, lock, parent_dirname):
         'filecount': 0
     }
 
+    # Temp
+    if dirname.split(parent_dirname)[1].replace('/', '').replace('\\', '') == 'httpcache':
+        print(f'Skipping {dirname}')
+        return
+
     # Get date modified of this directory
     date_modified = os.path.getmtime(dirname)
 
